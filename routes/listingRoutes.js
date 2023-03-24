@@ -72,7 +72,7 @@ router.post("/newProject", async (req, res) => {
 	}
 	catch(err){
 		console.log(err);
-		res.status(500).send({message: "Error in createing a new audition", err})
+		res.status(500).send({message: "Error in createing a new audition"})
 	}
 })
 
