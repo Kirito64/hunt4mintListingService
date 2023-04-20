@@ -15,8 +15,13 @@ const applicant = sequelize.define("applicant", {
 	listingId:{
 		type: DataTypes.INTEGER,
 		allowNull: false,
+	},
+	applicationStatus:{
+		type: DataTypes.ENUM("Pending", "Accepted", "Rejected"),
+		allowNull: false,
 	}
 })
+ 
  
 
 module.exports = applicant;

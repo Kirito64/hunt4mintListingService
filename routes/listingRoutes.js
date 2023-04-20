@@ -30,7 +30,9 @@ router.post("/newAudition", async (req, res) => {
 			res.status(403).send({message: "User cannot create a project"})
 		}
 		data.typeOfListing = "audition";
-		const newAudition = await db.listing.create(data);
+		const dataReconstrued = {...data}
+		dataReconstrued.coverImage = await uploadToS3(req.files.file.data, req.files.file.name)
+		const newAudition = await db.listing.create(dataReconstrued);
 		res.status(200).send({message: "Audition Created", data: newAudition});
 	}
 	catch(err){
@@ -67,7 +69,9 @@ router.post("/newProject", async (req, res) => {
 		else if(userdata.userType  !== "client"){
 			res.status(403).send({message: "User cannot create a project"})
 		}
-		const newAudition = await db.listing.create(data);
+		const dataReconstrued = {...data}
+		dataReconstrued.coverImage = await uploadToS3(req.files.file.data, req.files.file.name)
+		const newAudition = await db.listing.create(dataReconstrued);
 		res.status(200).send({message: "Audition Created", data: newAudition});
 	}
 	catch(err){
@@ -101,6 +105,19 @@ router.get("/projects/:userId", async(req, res) => {
 	}
 })
 
+router.get("/auditions/:userId", async(req, res) => {
+	let user = req.params.user;
+	try{
+		const projects = await db.listing.findAll({where:{createdBy: user, typeOfListing: "project"}, order: ["createdAt"]})
+		res.status(200).send(projects)
+
+	}
+	catch(err){
+		res.status(500).send({message: "Internal Server Error"})
+	}
+})
+
+
 router.post("/applyToListing", async (req, res) => {
 	const listingId = req.body.listingId;
 	const applicantId = req.body.applicantId;
@@ -108,6 +125,7 @@ router.post("/applyToListing", async (req, res) => {
 		let data = {};
 		data.listingId = listingId;
 		data.applicantId = applicantId;
+		data.applicationStatus = "Pending"
 
 		const newApplication = await db.applicant.create(data);
 		res.status(200).send({message: "Succesfully Appplied to listing", data: newApplication})
@@ -115,6 +133,24 @@ router.post("/applyToListing", async (req, res) => {
 	catch(err){
 		res.status(500).send({message: "Unexpected error occured while Applying", data: err.data})
 	}
+})
+
+router.put("/updateApplication", async(req, res)=>{
+	const id = req.body.id; 
+	const newStatus = req.body.status; 
+
+	try{
+		let data = {};
+		data.ApplicationStatus = newStatus;
+
+		const updateApplication = await db.applicant.updateOne(data, {where: {"id": id}})
+		res.status(204).send({message: "Updated Sucessfully", data: updateApplication})
+
+	}
+	catch(err){
+		res.status(500).send({message: "Unexpected error occured while Applying", data: err.data})
+	}
+
 })
 
 router.get("/getUserAuditions", async (req,res)=>{
